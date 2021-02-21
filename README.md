@@ -11,4 +11,7 @@ https://github.com/acrobotic/Ai_Demos_RPi/wiki/Raspberry-Pi-4-and-Intel-RealSens
 Simple voice recognition code is also included in this repository to trigger depth camera with vocie command.
 It is construced  in a way that the user can wake up the device with a specific word, and command.
 For example, wake up the deivce by calling it "kd" and command "Take snapshot" to take a depth image of surroundings.
+Below guide is used as the basis for this work.
+https://realpython.com/python-speech-recognition/
+
 
