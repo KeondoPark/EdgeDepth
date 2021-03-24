@@ -3,6 +3,8 @@ import time
 
 import speech_recognition as sr
 import rs_snapshot
+import transform
+#import votenet_inference
 
 def recognize_speech_from_mic(recognizer, microphone):
     """Transcribe speech from recorded from `microphone`.
@@ -24,9 +26,12 @@ def recognize_speech_from_mic(recognizer, microphone):
     if not isinstance(microphone, sr.Microphone):
         raise TypeError("`microphone` must be `Microphone` instance")
 
-    #print("Running voice recognition module...")
+    print("Running voice recognition module...")
     # adjust the recognizer sensitivity to ambient noise and record audio
     # from the microphone
+
+    print(microphone)
+
     with microphone as source:
         recognizer.adjust_for_ambient_noise(source, duration=0.5)
         audio = recognizer.listen(source)
@@ -61,50 +66,65 @@ if __name__ == "__main__":
     # create recognizer and mic instances
     recognizer = sr.Recognizer()
     #microphone = sr.Microphone(device_index=2)
-    microphone = sr.Microphone()
-    
-    #for i in range(NUM_GUESSES):
-        # get the guess from the user
-        # if a transcription is returned, break out of the loop and
-        #     continue
-        # if no transcription returned and API request failed, break
-        #     loop and continue
-        # if API request succeeded but no transcription was returned,
-        #     re-prompt the user to say their guess again. Do this up
-        #     to PROMPT_LIMIT times
-    while True:
-        print("If you want to give instruction, wake up me by saying ", WAKE_UP_WORD)
-        listening = recognize_speech_from_mic(recognizer, microphone)
-        if listening['transcription']:
-            print("Captured voice:", listening['transcription'])
-        if listening['transcription'] and listening['transcription'].lower() == WAKE_UP_WORD:            
+    m, idx = -1, 0
+    for device_name in sr.Microphone().list_microphone_names():
+        if device_name.startswith("ReSpeaker"):
+            m = idx
+            print("Respeaker found, device_index=", m)
+            break
+        idx += 1
+
+    if m < 0:
+        print("Respeaker not found")        
+    else:
+        microphone = sr.Microphone(device_index=m)
         
-            # format the instructions string
-            instructions = "Now woke up. Please wait for 1 second before you give instruction"
-
-            # show instructions and wait 3 seconds before receiving instruction
-            print(instructions)
-            time.sleep(1)
+        #for i in range(NUM_GUESSES):
+            # get the guess from the user
+            # if a transcription is returned, break out of the loop and
+            #     continue
+            # if no transcription returned and API request failed, break
+            #     loop and continue
+            # if API request succeeded but no transcription was returned,
+            #     re-prompt the user to say their guess again. Do this up
+            #     to PROMPT_LIMIT times
+        while True:
+            print("If you want to give instruction, wake up me by saying ", WAKE_UP_WORD)
+            listening = recognize_speech_from_mic(recognizer, microphone)
+            if listening['transcription']:
+                print("Captured voice:", listening['transcription'])
+            if listening['transcription'] and listening['transcription'].lower() == WAKE_UP_WORD:            
             
-            for j in range(PROMPT_LIMIT):        
-                print('Speak now!')
-                response = recognize_speech_from_mic(recognizer, microphone)
-                if response['transcription']:
-                    break
-                if not response['success']:
-                    break
-                if not response["success"]:
-                    print("I didn't catch that. What did you say?\n")
-                    
-            if response["error"]:
-                print("Error:{}".format(guess["error"]))
-            elif not response["success"]:
-                print("I didn't catch that. Exiting program..\n")
-            else:            
-                # show the user the transcription
-                print("You said: {}".format(response["transcription"]))
+                # format the instructions string
+                instructions = "Now woke up. Please wait for 1 second before you give instruction"
 
-                if response["transcription"].lower() == 'snapshot':
-                    print("Valid instruction for taking depth snapshot, now starting to take depth snapshot")
-                    rs_snapshot.take_snapshot()
-                    break
+                # show instructions and wait 3 seconds before receiving instruction
+                print(instructions)
+                time.sleep(1)
+                
+                for j in range(PROMPT_LIMIT):        
+                    print('Speak now!')
+                    response = recognize_speech_from_mic(recognizer, microphone)
+                    if response['transcription']:
+                        break
+                    if not response['success']:
+                        break
+                    if not response["success"]:
+                        print("I didn't catch that. What did you say?\n")
+                        
+                if response["error"]:
+                    print("Error:{}".format(guess["error"]))
+                elif not response["success"]:
+                    print("I didn't catch that. Exiting program..\n")
+                else:            
+                    # show the user the transcription
+                    print("You said: {}".format(response["transcription"]))
+
+                    if response["transcription"].lower() == 'snapshot':
+                        print("Valid instruction for taking depth snapshot, now starting to take depth snapshot")
+                        ply_filename = rs_snapshot.take_snapshot()
+                        roated_ply = transform.rotation_ply(ply_filename)
+                        #predicted_class = votenet_inference.votenet_inference(rotated_ply)
+                        #print(predicted_class)
+                        break
+    

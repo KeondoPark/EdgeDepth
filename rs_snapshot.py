@@ -1,5 +1,5 @@
-import pyrealsense2.pyrealsense2 as rs
-#import pyrealsense2 as rs
+#import pyrealsense2.pyrealsense2 as rs
+import pyrealsense2 as rs
 import numpy as np
 import time
 
@@ -30,7 +30,7 @@ def take_snapshot():
 
                 currentTime = time.time()
                 filename = 'snapshot_' + str(currentTime) + '.ply'
-                ply = rs.save_to_ply(filename)
+                ply = rs.save_to_ply('point_cloud/' + filename)
                 ply.set_option(rs.save_to_ply.option_ply_binary, False)
                 ply.set_option(rs.save_to_ply.option_ignore_color, True)
                 ply.set_option(rs.save_to_ply.option_ply_normals, False)
